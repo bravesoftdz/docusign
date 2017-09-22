@@ -1,0 +1,81 @@
+Request file represents a simple text file.
+
+The information is broken into sections.
+Each section starts with an asterix "*" and a keyword followed. The line ends with the line break.
+(rightmost white space is trimmed);
+Example: *Subject:
+
+Once a section header is found all following lines are considered to be a data for the section.
+If an emtpy line is found the section is considered to be finished.
+Section names are case-insensitive
+
+Any text that shows up WITHOUT any section started, is considered to be in the body of the email.
+the last section of the document is considered to be part of body.
+
+If a line starts with # or ; or // symboles - the rest of the line is ignored.
+
+Following sections are allowed:
+Subject
+Signers
+Docs
+Tabs ( tabs must always be shown after "docs" - really? why? too lazy?) 
+
+
+Subject section data:
+Each line represents a part of the subject.
+
+Signers section data:
+Each line represnets a signer. The first word in the email is considered to be an email
+, separted by a white space character (non-line break). The rest of the line is signer's name
+
+Docs section date:
+Each line represtents a document that needs to be sent for siging
+The first word in the line (can be wrapped  in a commas) represents a physical file name
+the rest of the line is considered to be file name be shown in the envelope.
+
+If a line doesn't correspond to the format of the section it could be discareded.
+
+The order in the DocuSign is maintained as it shows up in the input file.
+
+It's allowed the same section to show up multiple times in the input file.
+If that's the case the data will be added to any existing data that has been
+declared previously.
+---
+
+Examples:
+
+*Subject
+Please sign this application!
+
+*Signers
+johndoe@home.com John Doe
+janedoe@home.com Jane Doe
+
+*Docs
+C:\docusign\document.pdf document.pdf
+
+Ok, so this is another email that goes out there!
+Not even a subject
+AOHNJOY!
+
+*Tabs 
+doc C:\docusign\document.pdf
+maring left top 
+page 1
+  :%typeof% 
+  @"%MYHIDDENTEXT%"     - anchor text , @! - mandatory anchor text
+  [10mm,20mm,20mm,30in] - coordinates and size [left, top, width, height]
+  #"name of the value"  - tabLabel 
+  (johndoe@home.com,janedoe@home.com) - list of signers. If not specied all "default" signers is used
+  {italic bold 12px/30px Georgia, serif;} - font style
+  ?"nameofcondition=value" - condition value
+  "text this is the text of value"
+  
+                 
+   
+  
+
+
+  
+
+   
