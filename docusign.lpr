@@ -32,7 +32,7 @@ var
      the provided trace. We are looking for the verb/method, URI, endpoint, authentication method, credentials, and payload. The intent is to
      validate that your Support teams can provide this information when contacting DocuSign Support for backend assistance
 }
-  TraceFile   : string = ''; // communcation trace file
+  TraceFile   : string = ''; // communication trace file
 
   Debug  : Boolean = false;
   isCSV  : Boolean = false;
