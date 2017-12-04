@@ -56,6 +56,9 @@ const
   SECTABS = 'tabs';
   SECSUBJ = 'subject';
   SECSIGNERS = 'signers';
+  SECCARBONCOPY = 'carboncopies';
+
+  _SECCC = 'cc'; // alias for carboncopies
 
   SMS_AUTH_DEFAULT = 'SMS Auth $';
   ID_AUTH_DEFAULT  = 'ID Check $'; // todo: is it correct?
@@ -140,6 +143,9 @@ begin
   tt:=trim(s);
   //if tt[length(tt)]<>':' then Exit;
   Result:=AnsiLowerCase(Copy(tt, 2, length(tt)-1));
+
+  if Result=_SECCC then
+    Result:=SECCARBONCOPY;
   //writeln('tt: ', Result);
 
   {if (Result<>SECDOCS) and (Result<>SECSIGNERS) and (Result<>SECDOCS) and (Result<>SECTABS) then
@@ -499,6 +505,9 @@ begin
     else if (r.signcount>0) then begin
       AddFieldtoRecp(r.signers[r.signcount-1], p1, p2);
     end;
+  end else if fSection=SECCARBONCOPY then begin
+    ParseParams(data, p1, p2);
+    DocuSignRequestAddCarbonCopy(r, p1, p2);
   end;
 end;
 
@@ -507,8 +516,26 @@ procedure TDocuSignInputFile.NormalizeRequest(var r: TDocuSignRequest);
 var
   i : integer;
   rid : string;
+  k  : integer;
 begin
   if r.signcount>0 then rid := r.signers[0].id;
+
+  if r.cccount>0 then begin
+    k:=r.signcount+1;
+    for i:=0 to r.cccount-1 do begin
+      r.carboncopes[i].id:=IntToStr(k);
+      inc(k);
+    end;
+  end;
+
+  if (r.signcount>0) and (r.cccount>0) then begin
+    for i:=0 to r.signcount-1 do
+      r.signers[i].routingOrder:=2;
+    for i:=0 to r.cccount-1 do
+      r.carboncopes[i].routingOrder:=1;
+  end;
+
+
   for i:=0 to r.tabcount-1 do begin
     r.tabs[i].documentId:=FindDocumentId(r, r.tabs[i].documentId); // from document path
     rid:=FindRecipientId(r, r.tabs[i].recipientId);

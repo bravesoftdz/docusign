@@ -174,6 +174,8 @@ type
     idauthdateofbirth : string;
 
     clientUserID      : string;
+
+    routingOrder      : Integer;
   end;
 
   //
@@ -194,6 +196,9 @@ type
 
     tabs      : array of TDocuSignTab;
     tabcount  : integer;
+
+    carboncopes : array of TDocuSignRecipient;
+    cccount     : Integer;
   end;
 
   TDocuSignRecipients = record
@@ -303,7 +308,7 @@ function JsonStrParse(const js: string): TJSONData;
 
 function DocuSignJsonLoginStr(const aname, apassword, akey: string): string;
 function DocuSignArrayOfDocumentsStr(const documents: array of TDocuSignDocument; len: Integer ): string;
-function DocuSignArrayOfRecipientsStr(const idname: string;
+function DocuSignArrayOfRecipientsStr(//const idname: string;
   const res: array of TDocuSignRecipient; len: Integer;
   const tabs: array of TDocuSignTab; const tabCount: integer): string;
 function DocuSignRequestSignStr(const astatus: string; const request: TDocuSignRequest): string;
@@ -312,6 +317,8 @@ procedure DocuSignRequestInit(var request : TDocuSignRequest; const subject: str
 function DocuSignRequestAddSigner(var request : TDocuSignRequest; const email, name: string): string;
 function DocuSignRequestAddDocument(var request : TDocuSignRequest; const filename, name: string): string; overload;
 function DocuSignRequestAddDocument(var request : TDocuSignRequest; stream: TStream; const name: string): string; overload;
+function DocuSignRequestAddCarbonCopy(var request : TDocuSignRequest; const email, name: string): string;
+
 
 function DocuSignRequestAddTab(var request : TDocuSignRequest): Integer;
 procedure DocuSignTabInit(var atab: TDocuSignTab; const adocumentId, areceipientId: string; const PageNum: Integer; const atabtype: string);
@@ -508,7 +515,7 @@ begin
     Result:='"smsAuthentication":{"senderProvidedNumbers":['+Result+']}';
 end;
 
-function DocuSignArrayOfRecipientsStr(const idname: string; const res: array of TDocuSignRecipient; len: Integer;
+function DocuSignArrayOfRecipientsStr(const res: array of TDocuSignRecipient; len: Integer;
   const tabs: array of TDocuSignTab; const tabCount: integer): string;
 var
   i,j : Integer;
@@ -522,8 +529,9 @@ begin
     Result:=Result
       +'{'
       +'"email":"'+JsonStr(res[i].email)+'"'
-      +',"name":"'+JsonStr(res[i].name)+'"'
-      +',"'+JsonStr(idname)+'":"'+Jsonstr(res[i].id)+'"';
+      +',"name":"'+JsonStr(res[i].name)+'"';
+    if res[i].id<>'' then
+      Result:=Result+',"recipientId":"'+Jsonstr(res[i].id)+'"';
 
     if res[i].requireIdLookup then begin
       //Result:=Result+#10
@@ -544,10 +552,17 @@ begin
       Result:=Result+',"clientUserId":"'+JsonStr(res[i].clientUserID)+'"';
     end;
 
-    stb:=DocuSignArrayOfTabsStr(tabs, tabCount, res[i].id);
-    if stb<>'' then
-      Result:=Result+',"tabs":{'+stb+'}';
-    Result:=Result+'}'
+    if res[i].routingOrder>0 then begin
+      Result:=Result+',"routingOrder":'+IntToStr(res[i].routingOrder);
+    end;
+
+    if res[i].id<>'' then begin
+      stb:=DocuSignArrayOfTabsStr(tabs, tabCount, res[i].id);
+      if stb<>'' then
+        Result:=Result+',"tabs":{'+stb+'}';
+    end;
+
+    Result:=Result+'}';
   end;
 end;
 
@@ -814,11 +829,15 @@ begin
   if request.doccount>0 then
     j:=j+',"documents":['+DocuSignArrayOfDocumentsStr( request.documents, request.doccount )+']';
 
-  if request.signcount > 0 then begin
+  if (request.signcount > 0) or (request.cccount> 0) then begin
     // listing recipients
     j:=j+',"recipients":{ ';
     if request.signcount > 0 then begin
-      j:=j+'"signers":['+DocuSignArrayOfRecipientsStr('recipientId', request.signers, request.signcount, request.tabs, request.tabcount  )+']';
+      j:=j+'"signers":['+DocuSignArrayOfRecipientsStr(request.signers, request.signcount, request.tabs, request.tabcount  )+']';
+    end;
+    if request.cccount > 0 then begin
+      if request.signcount>0 then j:=j+',';
+      j:=j+'"carbonCopies":['+DocuSignArrayOfRecipientsStr(request.carboncopes, request.cccount, request.tabs, request.tabcount  )+']';
     end;
     j:=j+'}';
   end;
@@ -844,14 +863,9 @@ end;
 
 procedure DocuSignRequestInit(var request: TDocuSignRequest; const subject: string; const body: string = '');
 begin
+  FillChar(request, sizeof(request), 0);
   request.subj:=subject;
   request.body:=body;
-  request.signcount:=0;
-  request.documents:=nil;
-  request.doccount:=0;
-  request.signers:=nil;
-  request.tabcount:=0;
-  request.tabs:=nil;
 end;
 
 function DocuSignRequestAddSigner(var request: TDocuSignRequest; const email, name: string): string;
@@ -903,6 +917,24 @@ begin
   nm:=name;
   if nm='' then nm:='file_'+IntTostr(request.doccount);
   Result:=DocuSignRequestAddDocumentInt(request, '', stream, nm);
+end;
+
+function DocuSignRequestAddCarbonCopy(var request: TDocuSignRequest;
+  const email, name: string): string;
+var
+  i : integer;
+begin
+  i:=request.cccount;
+  if length(request.carboncopes)=i then begin
+    if request.cccount=0 then SetLength(request.carboncopes,2)
+    else SetLength(request.carboncopes, i*2);
+  end;
+  request.carboncopes[i].email:=email;
+  request.carboncopes[i].name:=name;
+  request.carboncopes[i].id:='cc'+IntToStr(i+1);
+  inc(request.cccount);
+  Result:='';
+  Result:=request.carboncopes[i].id;
 end;
 
 function DocuSignRequestAddTab(var request : TDocuSignRequest): Integer;
