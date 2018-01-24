@@ -530,7 +530,7 @@ begin
 
   if (r.signcount>0) and (r.cccount>0) then begin
     for i:=0 to r.signcount-1 do
-      r.signers[i].routingOrder:=2;
+      r.signers[i].routingOrder:=2+i;
     for i:=0 to r.cccount-1 do
       r.carboncopes[i].routingOrder:=1;
   end;
