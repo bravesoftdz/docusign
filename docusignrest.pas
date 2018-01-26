@@ -172,10 +172,12 @@ type
     idauthstate       : string;
     idauthzip         : string;
     idauthdateofbirth : string;
+    idauthdisplaycode : string;
 
     clientUserID      : string;
 
     routingOrder      : Integer;
+
   end;
 
   //
@@ -468,11 +470,16 @@ end;
 function DocuSignIDAuth(const r: TDocuSignRecipient): string;
 var
   addr, dob : string;
+  dd : string;
 begin
   Result:='';
   if (r.idauthaddress1='') and (r.idauthdateofbirth='') then begin
     Exit;
   end;
+
+  dd := r.idauthdisplaycode;
+  if dd = '' then dd := 'DoNotDisplay'
+  else dd := JsonStr(dd);
 
   if (r.idauthaddress1<>'') then
     addr:='"addressInformationInput": {'
@@ -483,13 +490,13 @@ begin
         +'"state": "'+JsonStr(r.idauthstate)+'",'
         +'"zip": "'+JsonStr(r.idauthzip)+'"'
      +'}'
-     +',"displayLevelCode": "DoNotDisplay"}'
+     +',"displayLevelCode": "'+dd+'"}'
   else
     addr:='';
 
   if (r.idauthdateofbirth<>'') then begin
     dob:='"dobInformationInput": { "dateOfBirth": "'+JsonStr(r.idauthdateofbirth)+'"'
-    +',"displayLevelCode": "DoNotDisplay"}';
+    +',"displayLevelCode": "'+dd+'"}';
   end else
     dob:='';
   Result:=addr;

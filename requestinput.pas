@@ -449,7 +449,8 @@ begin
     r.idauthdateofbirth:=avalue;
   end else if n = ':clientuserid' then begin
     r.clientUserID:=avalue;
-  end;
+  end else if n = ':idauth.displaylevelcode' then
+    r.idauthdisplaycode:=avalue;
 end;
 
 procedure TDocuSignInputFile.ParseSectionData(const data: string; var r: TDocuSignRequest);
