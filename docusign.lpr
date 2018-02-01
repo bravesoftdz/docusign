@@ -551,7 +551,7 @@ begin
       ExitCode:=1;
       writeln(env.envelopeId);
 
-      for j:=0 to q.signcount-1 do begin
+      for i:=0 to q.signcount-1 do begin
         if q.signers[i].clientUserID<>'' then begin
           writeln(q.signers[i].email,' ', r.GetRecpViewURL(env.envelopeId, q.signers[i], gReturnURL, gAuthMethod));
         end;
