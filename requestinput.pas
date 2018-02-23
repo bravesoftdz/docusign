@@ -31,6 +31,7 @@ type
     style          : string;
     required       : Boolean;
     locked         : TFieldLock; // explicitly unlocked
+    scale          : string;
   end;
 
   { TDocuSignInputFile }
@@ -296,6 +297,10 @@ var
   i : integer;
   p : string;
   j : integer;
+  t : string;
+  scc : Boolean;
+  scl : double;
+  err : integer;
 begin
   isNewField:=false;
   i:=1;
@@ -343,8 +348,26 @@ begin
     end else if (s[i] in ['"',#39]) then begin
       inc(i);
       fld.text:=NextWordEnd(s, s[i-1], i);
-    end else
-      inc(i);
+    end else begin
+      scc:=false;
+      j:=i;
+      if s[j] in ['0'..'9'] then begin
+        t:=NextWord(s, j);
+        if t[length(t)]='%' then begin
+          Val(copy(t, 1, length(t)-1), scl, err);
+          if err=0 then
+          begin
+            fld.scale:=StringReplace(  Format('%.4f', [scl/100]), '0.','.', [rfReplaceAll]);
+            scc:=true;
+          end;
+        end;
+      end;
+
+      if not scc then
+        inc(i)
+      else
+        i:=j;
+    end;
   end;
   Result:=True;
 end;
@@ -382,6 +405,7 @@ begin
   r.tabs[i].height:=MMtoPt(fd.height);
   r.tabs[i].value:=fd.text;
   r.tabs[i].tabLabel:=fd.tabLabel;
+  r.tabs[i].scaleValue:=fd.scale;
 
   j:=Pos('=',fd.cond);
   if j>0 then begin
@@ -518,6 +542,7 @@ var
   i : integer;
   rid : string;
   k  : integer;
+  sofs : integer;
 begin
   if r.signcount>0 then rid := r.signers[0].id;
 
@@ -529,12 +554,21 @@ begin
     end;
   end;
 
-  if (r.signcount>0) and (r.cccount>0) then begin
-    for i:=0 to r.signcount-1 do
-      r.signers[i].routingOrder:=2+i;
-    for i:=0 to r.cccount-1 do
-      r.carboncopes[i].routingOrder:=1;
+  //always enforcing routing order
+
+  //if (r.signcount>0) or (r.cccount>0) then begin
+  sofs:=1;
+  for i:=0 to r.cccount-1 do begin
+    r.carboncopes[i].routingOrder:=sofs;
+    inc(sofs);
   end;
+
+  for i:=0 to r.signcount-1 do
+  begin
+    r.signers[i].routingOrder:=sofs;
+    inc(sofs);
+  end;
+  //end;
 
 
   for i:=0 to r.tabcount-1 do begin

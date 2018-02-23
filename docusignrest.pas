@@ -144,6 +144,7 @@ type
     fontSize  : string;
     italic: boolean;
     tabLabel : string; // it is "groupName" for Radio Groups button
+    scaleValue : string;
     underline : Boolean;
     concealValueOnDocument : Boolean;
     disableAutosize: Boolean;
@@ -640,6 +641,7 @@ begin
     if tab._lockset then begin
       wr.BoolVal('locked', tab.locked);
     end;
+    wr.StrValNotEmpty('scaleValue', tab.scaleValue);
 
     Result:=wr.Finish;
   finally
